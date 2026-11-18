@@ -60,43 +60,52 @@ def run_tool(name, tool_input):
 # Create the client (it reads ANTHROPIC_API_KEY from the environment)
 client = Anthropic()
 
-question = "What is the total wall length in sample_plan.dxf?"
+
 # The conversation history: Claude only remembers what is in this list
-messages = [{"role": "user", "content": question}]
+messages = []
 
 while True:
-    # Send the whole history plus the tool cards to Claude
-    response = client.messages.create(
-        model="claude-haiku-5-5",
-        max_tokens=1000,
-        tools=tools,
-        messages=messages,
-    )
-    # Save Claude's answer (including thinking and tool requests) to the history
-    messages.append({"role": "assistant", "content": response.content})
-
-    # If Claude did not ask for a tool, it is done
-    if response.stop_reason != "tool_use":
+    # Ask the engineer for a question
+    question = input("You: ")
+    # Typing quit ends the program
+    if question == "quit":
         break
+    # Add the question to the history
+    messages.append({"role": "user", "content": question})
 
-    # Run every tool Claude asked for and collect the results
-    tool_results = []
+    while True:
+        # Send the whole history plus the tool cards to Claude
+        response = client.messages.create(
+            model="claude-haiku-5-5",
+            max_tokens=1000,
+            tools=tools,
+            messages=messages,
+        )
+        # Save Claude's answer (including thinking and tool requests) to the history
+        messages.append({"role": "assistant", "content": response.content})
+
+        # If Claude did not ask for a tool, it is done
+        if response.stop_reason != "tool_use":
+            break
+
+        # Run every tool Claude asked for and collect the results
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                print("Calling tool:", block.name, block.input)
+                result = run_tool(block.name, block.input)
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result,
+                    }
+                )
+
+        # Send the results back as the user's next message
+        messages.append({"role": "user", "content": tool_results})
+
+    # Print Claude's final answer
     for block in response.content:
-        if block.type == "tool_use":
-            print("Calling tool:", block.name, block.input)
-            result = run_tool(block.name, block.input)
-            tool_results.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": result,
-                }
-            )
-
-    # Send the results back as the user's next message
-    messages.append({"role": "user", "content": tool_results})
-
-# Print Claude's final answer
-for block in response.content:
-    if block.type == "text":
-        print(block.text)
+        if block.type == "text":
+            print(block.text)
