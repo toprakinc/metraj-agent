@@ -25,6 +25,21 @@ def measure_layer(path, layer):
     return total
 
 
+def list_layers(path):
+    # Open the DXF file and get the modelspace (where the drawing lives)
+    doc = ezdxf.readfile(path)
+    msp = doc.modelspace()
+
+    # A set keeps each layer name only once, even if it appears many times
+    layers = set()
+    for entity in msp:
+        layers.add(entity.dxf.layer)
+
+    # Return the names as an alphabetically sorted list
+    return sorted(layers)
+
+
 # Quick manual tests: expected 44.0 and 1.0
 print(measure_layer("sample_plan.dxf", "DUVAR"))
 print(measure_layer("sample_plan.dxf", "KAPI"))
+print(list_layers("sample_plan.dxf"))
