@@ -39,7 +39,8 @@ def list_layers(path):
     return sorted(layers)
 
 
-# Quick manual tests: expected 44.0 and 1.0
-print(measure_layer("sample_plan.dxf", "DUVAR"))
-print(measure_layer("sample_plan.dxf", "KAPI"))
-print(list_layers("sample_plan.dxf"))
+# Run these tests only when this file is run directly, not when imported
+if __name__ == "__main__":
+    print(measure_layer("sample_plan.dxf", "DUVAR"))
+    print(measure_layer("sample_plan.dxf", "KAPI"))
+    print(list_layers("sample_plan.dxf"))
